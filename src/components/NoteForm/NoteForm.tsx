@@ -7,10 +7,7 @@ import type { CreateNoteParams } from "../../services/noteService";
 import toast from "react-hot-toast";
 
 interface NoteFormProps {
-  query: string;
-  page: number;
-  onSubmit: () => void;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
 const tags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
@@ -32,27 +29,24 @@ const formScheme = Yup.object().shape({
   tag: Yup.string().oneOf(tags),
 });
 
-export default function NoteForm({
-  query,
-  page,
-  onSubmit,
-  onCancel,
-}: NoteFormProps) {
+export default function NoteForm({ onClose }: NoteFormProps) {
   const queryClient = useQueryClient();
+
   const noteCreate = useMutation({
     mutationFn: async ({ title, content, tag }: InitialValues) => {
       const data = await createNote({ title, content, tag });
       return data;
     },
     onSuccess: () => {
-      onSubmit();
       toast.success("Note created");
-      queryClient.invalidateQueries({ queryKey: ["notes", query, page] });
+      onClose();
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
     onError: () => {
       toast.error("Error");
     },
   });
+
   const onFormSubmit = (
     values: InitialValues,
     actions: FormikHelpers<InitialValues>
@@ -60,6 +54,7 @@ export default function NoteForm({
     noteCreate.mutate(values);
     actions.resetForm();
   };
+
   return (
     <Formik
       initialValues={initialValues}
@@ -98,7 +93,7 @@ export default function NoteForm({
         </div>
 
         <div className={css.actions}>
-          <button type="button" className={css.cancelButton} onClick={onCancel}>
+          <button type="button" className={css.cancelButton} onClick={onClose}>
             Cancel
           </button>
           <button type="submit" className={css.submitButton}>
